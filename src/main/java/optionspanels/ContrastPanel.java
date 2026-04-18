@@ -48,7 +48,6 @@ public class ContrastPanel extends JPanel {
             valueLabel.setText(String.format("Gamma factor: %.1f", gammaValue));
             int[][][] newMatrix = ImageProcessor.applyContrastPower(originalMatrix, gammaValue);
             if (newMatrix != null) photoPanel.setImageMatrix(newMatrix);
-            parentPanel.updateHistogram();
         });
 
         JButton applyGammaBtn = new JButton("Apply Gamma");
@@ -56,7 +55,6 @@ public class ContrastPanel extends JPanel {
         applyGammaBtn.addActionListener(e -> {
             originalMatrix = photoPanel.getImageMatrix();
             gammaSlider.setValue(10);
-            parentPanel.updateHistogram();
         });
 
         JLabel logLabel = new JLabel("Log correction:");
@@ -71,7 +69,6 @@ public class ContrastPanel extends JPanel {
                 photoPanel.setImageMatrix(newMatrix);
                 originalMatrix = newMatrix;
                 gammaSlider.setValue(10);
-                parentPanel.updateHistogram();
             }
         });
 

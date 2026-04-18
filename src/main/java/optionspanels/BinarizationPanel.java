@@ -110,8 +110,6 @@ public class BinarizationPanel extends JPanel {
             isGrayscaleApplied = true;
 
             applyBinarizationBtn.setEnabled(true);
-
-            parentPanel.updateHistogram();
         });
 
         applyBinarizationBtn.addActionListener(e -> {
@@ -152,7 +150,6 @@ public class BinarizationPanel extends JPanel {
             if (newMatrix != null) {
                 photoPanel.setImageMatrix(newMatrix);
                 originalMatrix = newMatrix;
-                parentPanel.updateHistogram();
             }
         });
 

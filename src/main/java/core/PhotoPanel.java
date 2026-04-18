@@ -87,7 +87,7 @@ public class PhotoPanel extends JPanel {
 
         this.add(wrapperPanel, gbcMain);
 
-        File imageFile = new File("src/testImage.jpg");
+        File imageFile = new File("src/testImage.bmp");
         try {
             image = ImageIO.read(imageFile);
             createImageMatrix();

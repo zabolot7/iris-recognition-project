@@ -91,8 +91,6 @@ public class EdgeDetectionPanel extends JPanel {
             }
 
             photoPanel.setImageMatrix(newMatrix);
-
-            parentPanel.updateHistogram();
         });
 
         this.add(titleLabel);

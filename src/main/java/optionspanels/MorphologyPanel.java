@@ -70,8 +70,6 @@ public class MorphologyPanel extends JPanel {
             gridContainer.add(gridPanel);
             gridContainer.revalidate();
             gridContainer.repaint();
-
-            parentPanel.updateHistogram();
         };
 
         sizeSpinner.addChangeListener(e -> buildGrid.run());
@@ -105,17 +103,14 @@ public class MorphologyPanel extends JPanel {
                 newMatrix = ImageProcessor.applyDilation(currentMatrix, se, boundaryMode);
             }
             else if ("Opening".equals(selectedOp)) {
-                int[][][] temp = ImageProcessor.applyErosion(currentMatrix, se, boundaryMode);
-                newMatrix = ImageProcessor.applyDilation(temp, se, boundaryMode);
+                newMatrix = ImageProcessor.applyOpening(currentMatrix, se, boundaryMode);
             }
             else if ("Closing".equals(selectedOp)) {
-                int[][][] temp = ImageProcessor.applyDilation(currentMatrix, se, boundaryMode);
-                newMatrix = ImageProcessor.applyErosion(temp, se, boundaryMode);
+                newMatrix = ImageProcessor.applyClosing(currentMatrix, se, boundaryMode);
             }
 
             if (newMatrix != null) {
                 photoPanel.setImageMatrix(newMatrix);
-                parentPanel.updateHistogram();
             }
         });
 

@@ -92,7 +92,6 @@ public class EditMenu extends JMenu {
         int[][][] temp = photoPanel.getImageMatrix();
         photoPanel.setImageMatrix(lastImageMatrix);
         lastImageMatrix = temp;
-        optionPanel.updateHistogram();
     }
 
     /**
@@ -102,7 +101,6 @@ public class EditMenu extends JMenu {
         int[][][] temp = photoPanel.getImageMatrix();
         photoPanel.setImageMatrix(originalImageMatrix);
         lastImageMatrix = temp;
-        optionPanel.updateHistogram();
         optionPanel.refreshOnImport();
     }
 
@@ -113,7 +111,6 @@ public class EditMenu extends JMenu {
         lastImageMatrix = photoPanel.getImageMatrix();
         int[][][] newMatrix = ImageProcessor.applyNegative(lastImageMatrix);
         photoPanel.setImageMatrix(newMatrix);
-        optionPanel.updateHistogram();
     }
 
     /**

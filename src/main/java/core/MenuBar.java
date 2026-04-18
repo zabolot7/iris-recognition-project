@@ -1,7 +1,7 @@
 package core;
 
-import optionspanels.BinarizationPanel;
-import optionspanels.HistogramPanel;
+import optionspanels.GrayscalePanel;
+import optionspanels.IrisRecognitionPanel;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -41,6 +41,7 @@ public class MenuBar extends JMenuBar {
         JMenu displayMenu = setupDisplayMenu();
         editMenu = new EditMenu("Edit", photoPanel, lastImageMatrix, optionPanel, originalImageMatrix);
         JMenu settingsMenu = setupSettingsMenu(optionPanel);
+        JMenu irisRecognitionMenu = setupIrisRecognitionMenu();
 
         optionPanel.setEditMenu(editMenu);
 
@@ -48,6 +49,7 @@ public class MenuBar extends JMenuBar {
         add(displayMenu);
         add(editMenu);
         add(settingsMenu);
+        add(irisRecognitionMenu);
     }
 
     /**
@@ -81,21 +83,12 @@ public class MenuBar extends JMenuBar {
     private JMenu setupDisplayMenu(){
         JMenu displayMenu = new JMenu("Display");
 
-        JMenuItem showBrightnessHistogramItem = new JMenuItem("Show Brightness Histogram");
-        showBrightnessHistogramItem.addActionListener(e -> optionPanel.setHistogramMode(HistogramPanel.HistogramMode.BRIGHTNESS));
-
-        JMenuItem showRedHistogramItem = new JMenuItem("Show RGB Histograms");
-        showRedHistogramItem.addActionListener(e -> optionPanel.setHistogramMode(HistogramPanel.HistogramMode.COLOR));
-
         JCheckBoxMenuItem toggleProjectionsItem = new JCheckBoxMenuItem("Show Projections");
         toggleProjectionsItem.addActionListener(e -> {
             photoPanel.setShowProjections(toggleProjectionsItem.isSelected());
             photoPanel.updateProjections();
         });
 
-        displayMenu.add(showBrightnessHistogramItem);
-        displayMenu.add(showRedHistogramItem);
-        displayMenu.addSeparator();
         displayMenu.add(toggleProjectionsItem);
 
         return displayMenu;
@@ -247,6 +240,18 @@ public class MenuBar extends JMenuBar {
 
         settingsMenu.add(convMenu);
         return settingsMenu;
+    }
+
+    private JMenu setupIrisRecognitionMenu() {
+        JMenu irisRecognitionMenu = new JMenu("Iris recognition");
+
+        JMenuItem startRecognitionItem = new JMenuItem("Prepare");
+
+        startRecognitionItem.addActionListener(e -> optionPanel.loadToolPanel(new IrisRecognitionPanel(photoPanel, optionPanel)));
+
+        irisRecognitionMenu.add(startRecognitionItem);
+
+        return irisRecognitionMenu;
     }
 
 }

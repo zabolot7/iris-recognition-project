@@ -1,8 +1,5 @@
 package core;
 
-import optionspanels.HistogramPanel.HistogramMode;
-import optionspanels.HistogramPanel;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -24,7 +21,6 @@ public class OptionPanel extends JPanel {
     private EditMenu editMenu;
     private BoundaryMode currentBoundaryMode = BoundaryMode.REPLICATE;
     private JPanel toolArea;
-    private HistogramPanel histogramPanel;
 
     /**
      * Constructs the sidebar panel with a top tool area and a bottom histogram.
@@ -40,8 +36,6 @@ public class OptionPanel extends JPanel {
         toolArea = new JPanel(new BorderLayout());
         this.add(toolArea, BorderLayout.NORTH);
 
-        histogramPanel = new HistogramPanel(photoPanel, this);
-        this.add(histogramPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -87,9 +81,6 @@ public class OptionPanel extends JPanel {
      */
     public void refreshOnImport() {
         toolArea.removeAll();
-        if (histogramPanel != null) {
-            histogramPanel.refreshHistograms();
-        }
         this.revalidate();
         this.repaint();
     }
@@ -102,9 +93,6 @@ public class OptionPanel extends JPanel {
     public void loadToolPanel(JPanel toolPanel) {
         toolArea.removeAll();
 
-        // always reset width to 400
-        //this.setPreferredSize(new Dimension(400, 0));
-
         toolArea.add(toolPanel, BorderLayout.CENTER);
 
         Window window = SwingUtilities.getWindowAncestor(this);
@@ -114,27 +102,5 @@ public class OptionPanel extends JPanel {
 
         toolArea.revalidate();
         toolArea.repaint();
-    }
-
-    /**
-     * Redraws the histogram based on the current image matrix.
-     */
-    public void updateHistogram() {
-        if (histogramPanel != null) {
-            histogramPanel.refreshHistograms();
-        }
-        photoPanel.updateProjections();
-    }
-
-    /**
-     * Changes the display mode of the histogram (Brightness vs. RGB).
-     *
-     * @param mode The selected HistogramMode.
-     */
-    public void setHistogramMode(HistogramMode mode) {
-        if (histogramPanel != null) {
-            histogramPanel.setMode(mode);
-        }
-        updateHistogram();
     }
 }

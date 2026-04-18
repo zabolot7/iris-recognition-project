@@ -97,7 +97,6 @@ public class SharpeningPanel extends JPanel {
             );
             photoPanel.setImageMatrix(newMatrix);
 
-            parentPanel.updateHistogram();
         });
 
         this.add(titleLabel);
@@ -125,6 +124,5 @@ public class SharpeningPanel extends JPanel {
         this.revalidate();
         this.repaint();
 
-        parentPanel.updateHistogram();
     }
 }

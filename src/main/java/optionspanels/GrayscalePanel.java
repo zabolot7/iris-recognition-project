@@ -135,7 +135,6 @@ public class GrayscalePanel extends JPanel {
             }
 
             photoPanel.setImageMatrix(newMatrix);
-            parentPanel.updateHistogram();
         });
 
         this.add(titleLabel);
