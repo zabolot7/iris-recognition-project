@@ -246,4 +246,37 @@ public class IrisRecognitionProcessor {
         return newMatrix;
     }
 
+    public static int[][][] generateIrisRectangle(int[][][] originalMatrix, int[] center, int pupilRadius, int irisRadius) {
+        if (originalMatrix == null || center == null) return null;
+
+        int height = originalMatrix.length;
+        int width = originalMatrix[0].length;
+        int[][][] newMatrix = new int[64][512][3];
+
+        int cX = center[0];
+        int cY = center[1];
+
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 512; x++) {
+                double theta = 2 * Math.PI * x / 512.0;
+                double radius = pupilRadius + (y / 64.0) * (irisRadius - pupilRadius);
+
+                int xOriginal = (int) Math.round(cX + radius * Math.cos(theta));
+                int yOriginal = (int) Math.round(cY + radius * Math.sin(theta));
+
+                if (xOriginal >= 0 && xOriginal < width && yOriginal >= 0 && yOriginal < height) {
+                    newMatrix[y][x][0] = originalMatrix[yOriginal][xOriginal][0];
+                    newMatrix[y][x][1] = originalMatrix[yOriginal][xOriginal][1];
+                    newMatrix[y][x][2] = originalMatrix[yOriginal][xOriginal][2];
+                } else {
+                    newMatrix[y][x][0] = 0;
+                    newMatrix[y][x][1] = 0;
+                    newMatrix[y][x][2] = 0;
+                }
+            }
+        }
+
+        return newMatrix;
+    }
+
 }

@@ -68,6 +68,10 @@ public class IrisRecognitionPanel extends JPanel{
         allBoundariesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         allBoundariesBtn.setEnabled(false);
 
+        JButton getIrisRectangleBtn = new JButton("8. Unwrap the iris to rectangular block");
+        getIrisRectangleBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        getIrisRectangleBtn.setEnabled(false);
+
         grayscaleBtn.addActionListener(e -> {
             parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = ImageProcessor.applyGrayscale(photoPanel.getImageMatrix(), GrayscalePanel.GrayscaleOptions.LUMINANCE);
@@ -104,17 +108,6 @@ public class IrisRecognitionPanel extends JPanel{
             isBinarized = true;
         });
 
-//        irisBinarizationBtn.addActionListener(e -> {
-//            if (!isGrayscaleApplied) return;
-//
-//            parentPanel.saveUndoState(photoPanel.getImageMatrix());
-//            int[][][] newMatrix = IrisRecognitionProcessor.applyIrisBinarization(photoPanel.getImageMatrix());
-//            photoPanel.setImageMatrix(newMatrix);
-//            parentPanel.updateProjections();
-//
-//            isBinarized = true;
-//        });
-
         pupilBoundariesBtn.addActionListener(e -> {
             if (!isBinarized) return;
 
@@ -146,6 +139,15 @@ public class IrisRecognitionPanel extends JPanel{
 
             photoPanel.setImageMatrix(newMatrix);
             parentPanel.updateProjections();
+
+            getIrisRectangleBtn.setEnabled(true);
+        });
+
+        getIrisRectangleBtn.addActionListener(e -> {
+            parentPanel.saveUndoState(photoPanel.getImageMatrix());
+            int[][][] newMatrix = IrisRecognitionProcessor.generateIrisRectangle(originalMatrix, eyeCenter, pupilRadius, irisRadius);
+            photoPanel.setImageMatrix(newMatrix);
+            parentPanel.updateProjections();
         });
 
         this.add(titleLabel);
@@ -159,14 +161,12 @@ public class IrisRecognitionPanel extends JPanel{
         this.add(pupilBoundariesBtn);
         this.add(Box.createVerticalStrut(20));
         this.add(revertGrayscaleBtn);
-//        this.add(Box.createVerticalStrut(20));
-//        this.add(irisBinarizationBtn);
-//        this.add(Box.createVerticalStrut(20));
-//        this.add(irisMorphologyBtn);
         this.add(Box.createVerticalStrut(20));
         this.add(irisBoundariesBtn);
         this.add(Box.createVerticalStrut(20));
         this.add(allBoundariesBtn);
+        this.add(Box.createVerticalStrut(20));
+        this.add(getIrisRectangleBtn);
         this.add(Box.createVerticalGlue());
     }
 
