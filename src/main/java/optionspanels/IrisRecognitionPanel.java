@@ -49,7 +49,6 @@ public class IrisRecognitionPanel extends JPanel{
 
         JButton pupilMorphologyBtn = new JButton("3. Apply morphology operations");
         pupilMorphologyBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        pupilMorphologyBtn.addActionListener(e -> applyMorphology(true));
         pupilMorphologyBtn.setEnabled(false);
 
         JButton pupilBoundariesBtn = new JButton("4. Find the pupil boundaries");
@@ -106,6 +105,15 @@ public class IrisRecognitionPanel extends JPanel{
             parentPanel.updateProjections();
 
             isBinarized = true;
+        });
+
+        pupilMorphologyBtn.addActionListener(e -> {
+            if (!isBinarized) return;
+
+            parentPanel.saveUndoState(photoPanel.getImageMatrix());
+            int[][][] newMatrix = IrisRecognitionProcessor.applyPupilMorphology(photoPanel.getImageMatrix(), boundaryMode);
+            photoPanel.setImageMatrix(newMatrix);
+            parentPanel.updateProjections();
         });
 
         pupilBoundariesBtn.addActionListener(e -> {
@@ -168,20 +176,5 @@ public class IrisRecognitionPanel extends JPanel{
         this.add(Box.createVerticalStrut(20));
         this.add(getIrisRectangleBtn);
         this.add(Box.createVerticalGlue());
-    }
-
-    private void applyMorphology(boolean pupil) {
-        if (!isBinarized) return;
-
-        parentPanel.saveUndoState(photoPanel.getImageMatrix());
-        int[][][] newMatrix = photoPanel.getImageMatrix();
-
-        if (pupil) {
-            newMatrix = IrisRecognitionProcessor.applyPupilMorphology(photoPanel.getImageMatrix(), boundaryMode);
-        } else {
-            newMatrix = IrisRecognitionProcessor.applyIrisMorphology(photoPanel.getImageMatrix(), boundaryMode);
-        }
-        photoPanel.setImageMatrix(newMatrix);
-        parentPanel.updateProjections();
     }
 }

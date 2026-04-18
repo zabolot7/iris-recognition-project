@@ -242,6 +242,11 @@ public class MenuBar extends JMenuBar {
         return settingsMenu;
     }
 
+    /**
+     * Constructs the "Iris recognition" dropdown menu containing actions for navigating through iris recognition.
+     *
+     * @return The fully configured IrisRecognition JMenu.
+     */
     private JMenu setupIrisRecognitionMenu() {
         JMenu irisRecognitionMenu = new JMenu("Iris recognition");
 

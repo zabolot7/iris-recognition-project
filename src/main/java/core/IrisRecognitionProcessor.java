@@ -1,7 +1,17 @@
 package core;
 
+import optionspanels.GrayscalePanel;
+
 public class IrisRecognitionProcessor {
 
+    /**
+     * Dynamically calculates a binarization threshold based on the image's average global intensity
+     * and applies segmentation.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @param divider The divisor used to scale down the average intensity (higher values yield a stricter, darker threshold).
+     * @return A 3D array representing the resulting binarized image.
+     */
     public static int[][][] applyEyeBinarization(int[][][] originalMatrix, double divider) {
         if (originalMatrix == null) return null;
 
@@ -22,14 +32,22 @@ public class IrisRecognitionProcessor {
         return ImageProcessor.applySegmentation(originalMatrix, P);
     }
 
+    /**
+     * Applies binarization to isolate the pupil using a threshold divisor of 15.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @return The 3D array representing the image after binarization.
+     */
     public static int[][][] applyPupilBinarization(int[][][] originalMatrix) {
         return applyEyeBinarization(originalMatrix, 15);
     }
 
-    public static int[][][] applyIrisBinarization(int[][][] originalMatrix) {
-        return applyEyeBinarization(originalMatrix, 4.5);
-    }
-
+    /**
+     * A helper function to generate a circular structuring element (disk) for morphological operations.
+     *
+     * @param radius The radius of the disk in pixels.
+     * @return A 2D boolean array representing the disk mask.
+     */
     private static boolean[][] createDisk(int radius) {
         int diameter = 2 * radius + 1;
         boolean[][] disk = new boolean[diameter][diameter];
@@ -48,6 +66,14 @@ public class IrisRecognitionProcessor {
         return disk;
     }
 
+    /**
+     * Cleans and smooths the binarized pupil mask using sequential morphological operations.
+     * Uses a 5-pixel radius disk as a structuring element for opening, followed by a 7-pixel radius disk a structuring element for closing.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @param mode The boundary handling rule for edges.
+     * @return The 3D array representing the image after morphology.
+     */
     public static int[][][] applyPupilMorphology(int[][][] originalMatrix, OptionPanel.BoundaryMode mode) {
         if (originalMatrix == null) return null;
 
@@ -58,16 +84,13 @@ public class IrisRecognitionProcessor {
         return ImageProcessor.applyClosing(temp, disk15, mode);
     }
 
-    public static int[][][] applyIrisMorphology(int[][][] originalMatrix, OptionPanel.BoundaryMode mode) {
-        if (originalMatrix == null) return null;
-
-        boolean[][] disk7 = createDisk(3);
-        boolean[][] disk25 = createDisk(12);
-
-        int[][][] temp = ImageProcessor.applyOpening(originalMatrix, disk7, mode);
-        return ImageProcessor.applyClosing(temp, disk25, mode);
-    }
-
+    /**
+     * Calculates the eye center using the image's projections.
+     * Outer margins are excluded from the analysis to prevent interference from peripheral noise like eyelashes or hair.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @return Calculated 2-element array containing the (x, y) coordinates of the pupil center.
+     */
     public static int[] calculateCenter(int[][][] originalMatrix) {
         if (originalMatrix == null) return null;
 
@@ -123,16 +146,30 @@ public class IrisRecognitionProcessor {
         return new int[] {centerX, centerY};
     }
 
+    /**
+     * Calculates the pupil radius using the image's vertical projection.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @param center A 2-element array containing the (x, y) coordinates of the pupil center.
+     * @return The calculated radius.
+     */
     public static int calculateRadius(int[][][] originalMatrix, int[] center) {
         if (originalMatrix == null) return 0;
 
         int[][] projections = ImageProcessor.getProjections(originalMatrix);
         int[] verticalProj = projections[0];
-        int[] horizontalProj = projections[1];
 
         return verticalProj[center[0]]/2;
     }
 
+    /**
+     * Calculates the iris radius using the Daugman's operator.
+     *
+     * @param grayscaleMatrix The 3D array representing the image in grayscale.
+     * @param center A 2-element array containing the (x, y) coordinates of the pupil center.
+     * @param pupilRadius The pupil radius.
+     * @return The calculated iris radius.
+     */
     public static int calculateDaugmanIrisRadius(int[][][] grayscaleMatrix, int[] center, int pupilRadius) {
         if (grayscaleMatrix == null || center == null) return 0;
 
@@ -190,7 +227,14 @@ public class IrisRecognitionProcessor {
         return bestRadius;
     }
 
-
+    /**
+     * Draws the calculated boundary onto the given image.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @param center A 2-element array containing the (x, y) coordinates of the pupil center.
+     * @param radius The boundary radius.
+     * @return The 3D array representing the image with drawn boundaries.
+     */
     public static int[][][] applyBoundaries(int[][][] originalMatrix, int[] center, int radius) {
         if (originalMatrix == null || center == null) return null;
 
@@ -246,6 +290,15 @@ public class IrisRecognitionProcessor {
         return newMatrix;
     }
 
+    /**
+     * Generates an iris rectangle from the eye image using the given information.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @param center A 2-element array containing the (x, y) coordinates of the pupil center.
+     * @param pupilRadius The pupil radius.
+     * @param irisRadius The iris radius.
+     * @return A 3D array representing the iris rectangle.
+     */
     public static int[][][] generateIrisRectangle(int[][][] originalMatrix, int[] center, int pupilRadius, int irisRadius) {
         if (originalMatrix == null || center == null) return null;
 
@@ -277,6 +330,26 @@ public class IrisRecognitionProcessor {
         }
 
         return newMatrix;
+    }
+
+    /**
+     * Full process of generating an iris rectangle from the eye image.
+     *
+     * @param originalMatrix The 3D array representing the image.
+     * @param mode The boundary handling rule for edges.
+     * @return A 3D array representing the iris rectangle.
+     */
+    public static int[][][] extractIrisRectangle(int[][][] originalMatrix, OptionPanel.BoundaryMode mode) {
+        if (originalMatrix == null) return null;
+
+        int[][][] grayscaledMatrix = ImageProcessor.applyGrayscale(originalMatrix, GrayscalePanel.GrayscaleOptions.LUMINANCE);
+        int[][][] newMatrix = applyPupilBinarization(grayscaledMatrix);
+        newMatrix = applyPupilMorphology(newMatrix, mode);
+        int[] eyeCenter = IrisRecognitionProcessor.calculateCenter(newMatrix);
+        int pupilRadius = IrisRecognitionProcessor.calculateRadius(newMatrix, eyeCenter);
+        int irisRadius = IrisRecognitionProcessor.calculateDaugmanIrisRadius(grayscaledMatrix, eyeCenter, pupilRadius);
+
+        return generateIrisRectangle(grayscaledMatrix, eyeCenter, pupilRadius, irisRadius);
     }
 
 }
