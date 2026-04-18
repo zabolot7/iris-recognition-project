@@ -16,6 +16,9 @@ public class IrisRecognitionPanel extends JPanel{
     private boolean isBinarized = false;
     private int[][][] grayscaledMatrix;
     private OptionPanel.BoundaryMode boundaryMode;
+    private int[] eyeCenter;
+    private int irisRadius;
+    private int pupilRadius;
 
     public IrisRecognitionPanel(PhotoPanel photoPanel, OptionPanel parentPanel) {
         this.photoPanel = photoPanel;
@@ -42,32 +45,42 @@ public class IrisRecognitionPanel extends JPanel{
 
         JButton pupilBinarizationBtn = new JButton("2. Apply binarization for the pupil");
         pupilBinarizationBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        //pupilBinarizationBtn.setEnabled(false);
+        pupilBinarizationBtn.setEnabled(false);
 
         JButton pupilMorphologyBtn = new JButton("3. Apply morphology operations");
         pupilMorphologyBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         pupilMorphologyBtn.addActionListener(e -> applyMorphology(true));
+        pupilMorphologyBtn.setEnabled(false);
 
-        JButton revertGrayscaleBtn = new JButton("4. Revert to grayscaled image");
+        JButton pupilBoundariesBtn = new JButton("4. Find the pupil boundaries");
+        pupilBoundariesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pupilBoundariesBtn.setEnabled(false);
+
+        JButton revertGrayscaleBtn = new JButton("5. Revert to grayscaled image");
         revertGrayscaleBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        //revertGrayscaleBtn.setEnabled(false);
+        revertGrayscaleBtn.setEnabled(false);
 
-        JButton irisBinarizationBtn = new JButton("5. Apply binarization for the iris");
-        irisBinarizationBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        //irisBinarizationBtn.setEnabled(false);
+        JButton irisBoundariesBtn = new JButton("6. Find the iris boundaries");
+        irisBoundariesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        irisBoundariesBtn.setEnabled(false);
 
-        JButton irisMorphologyBtn = new JButton("6. Apply morphology operations");
-        irisMorphologyBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        irisMorphologyBtn.addActionListener(e -> applyMorphology(false));
+        JButton allBoundariesBtn = new JButton("7. Visualize both boundaries");
+        allBoundariesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        allBoundariesBtn.setEnabled(false);
 
         grayscaleBtn.addActionListener(e -> {
             parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = ImageProcessor.applyGrayscale(photoPanel.getImageMatrix(), GrayscalePanel.GrayscaleOptions.LUMINANCE);
             photoPanel.setImageMatrix(newMatrix);
-            originalMatrix = newMatrix;
             isGrayscaleApplied = true;
+            parentPanel.updateProjections();
 
             grayscaledMatrix = newMatrix;
+            pupilBinarizationBtn.setEnabled(true);
+            pupilMorphologyBtn.setEnabled(true);
+            pupilBoundariesBtn.setEnabled(true);
+            revertGrayscaleBtn.setEnabled(true);
+
         });
 
         revertGrayscaleBtn.addActionListener(e -> {
@@ -77,6 +90,7 @@ public class IrisRecognitionPanel extends JPanel{
             } else {
                 photoPanel.setImageMatrix(originalMatrix);
             }
+            parentPanel.updateProjections();
         });
 
         pupilBinarizationBtn.addActionListener(e -> {
@@ -85,20 +99,53 @@ public class IrisRecognitionPanel extends JPanel{
             parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = IrisRecognitionProcessor.applyPupilBinarization(photoPanel.getImageMatrix());
             photoPanel.setImageMatrix(newMatrix);
-            originalMatrix = newMatrix;
+            parentPanel.updateProjections();
 
             isBinarized = true;
         });
 
-        irisBinarizationBtn.addActionListener(e -> {
-            if (!isGrayscaleApplied) return;
+//        irisBinarizationBtn.addActionListener(e -> {
+//            if (!isGrayscaleApplied) return;
+//
+//            parentPanel.saveUndoState(photoPanel.getImageMatrix());
+//            int[][][] newMatrix = IrisRecognitionProcessor.applyIrisBinarization(photoPanel.getImageMatrix());
+//            photoPanel.setImageMatrix(newMatrix);
+//            parentPanel.updateProjections();
+//
+//            isBinarized = true;
+//        });
+
+        pupilBoundariesBtn.addActionListener(e -> {
+            if (!isBinarized) return;
 
             parentPanel.saveUndoState(photoPanel.getImageMatrix());
-            int[][][] newMatrix = IrisRecognitionProcessor.applyIrisBinarization(photoPanel.getImageMatrix());
+            eyeCenter = IrisRecognitionProcessor.calculateCenter(photoPanel.getImageMatrix());
+            pupilRadius = IrisRecognitionProcessor.calculateRadius(photoPanel.getImageMatrix(), eyeCenter);
+            int[][][] newMatrix = IrisRecognitionProcessor.applyBoundaries(photoPanel.getImageMatrix(), eyeCenter, pupilRadius);
             photoPanel.setImageMatrix(newMatrix);
-            originalMatrix = newMatrix;
 
-            isBinarized = true;
+            irisBoundariesBtn.setEnabled(true);
+        });
+
+        irisBoundariesBtn.addActionListener(e -> {
+            if (!isBinarized) return;
+
+            parentPanel.saveUndoState(photoPanel.getImageMatrix());
+            irisRadius = IrisRecognitionProcessor.calculateDaugmanIrisRadius(grayscaledMatrix, eyeCenter, pupilRadius);
+            int[][][] newMatrix = IrisRecognitionProcessor.applyBoundaries(photoPanel.getImageMatrix(), eyeCenter, irisRadius);
+            photoPanel.setImageMatrix(newMatrix);
+
+            allBoundariesBtn.setEnabled(true);
+        });
+
+        allBoundariesBtn.addActionListener(e -> {
+            parentPanel.saveUndoState(photoPanel.getImageMatrix());
+
+            int[][][] newMatrix = IrisRecognitionProcessor.applyBoundaries(originalMatrix, eyeCenter, pupilRadius);
+            newMatrix = IrisRecognitionProcessor.applyBoundaries(newMatrix, eyeCenter, irisRadius);
+
+            photoPanel.setImageMatrix(newMatrix);
+            parentPanel.updateProjections();
         });
 
         this.add(titleLabel);
@@ -109,11 +156,17 @@ public class IrisRecognitionPanel extends JPanel{
         this.add(Box.createVerticalStrut(20));
         this.add(pupilMorphologyBtn);
         this.add(Box.createVerticalStrut(20));
+        this.add(pupilBoundariesBtn);
+        this.add(Box.createVerticalStrut(20));
         this.add(revertGrayscaleBtn);
+//        this.add(Box.createVerticalStrut(20));
+//        this.add(irisBinarizationBtn);
+//        this.add(Box.createVerticalStrut(20));
+//        this.add(irisMorphologyBtn);
         this.add(Box.createVerticalStrut(20));
-        this.add(irisBinarizationBtn);
+        this.add(irisBoundariesBtn);
         this.add(Box.createVerticalStrut(20));
-        this.add(irisMorphologyBtn);
+        this.add(allBoundariesBtn);
         this.add(Box.createVerticalGlue());
     }
 
@@ -124,12 +177,11 @@ public class IrisRecognitionPanel extends JPanel{
         int[][][] newMatrix = photoPanel.getImageMatrix();
 
         if (pupil) {
-            newMatrix = IrisRecognitionProcessor.applyPupilMorphology(originalMatrix, boundaryMode);
+            newMatrix = IrisRecognitionProcessor.applyPupilMorphology(photoPanel.getImageMatrix(), boundaryMode);
         } else {
-            newMatrix = IrisRecognitionProcessor.applyIrisMorphology(originalMatrix, boundaryMode);
+            newMatrix = IrisRecognitionProcessor.applyIrisMorphology(photoPanel.getImageMatrix(), boundaryMode);
         }
-
         photoPanel.setImageMatrix(newMatrix);
-        originalMatrix = newMatrix;
+        parentPanel.updateProjections();
     }
 }

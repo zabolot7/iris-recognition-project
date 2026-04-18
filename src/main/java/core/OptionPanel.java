@@ -103,4 +103,8 @@ public class OptionPanel extends JPanel {
         toolArea.revalidate();
         toolArea.repaint();
     }
+
+    public void updateProjections() {
+        photoPanel.updateProjections();
+    }
 }
