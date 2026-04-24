@@ -71,6 +71,10 @@ public class IrisRecognitionPanel extends JPanel{
         getIrisRectangleBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         getIrisRectangleBtn.setEnabled(false);
 
+        JButton generateCodeBtn = new JButton("9. Generate iris code");
+        generateCodeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        generateCodeBtn.setEnabled(false);
+
         grayscaleBtn.addActionListener(e -> {
             parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = ImageProcessor.applyGrayscale(photoPanel.getImageMatrix(), GrayscalePanel.GrayscaleOptions.LUMINANCE);
@@ -156,6 +160,35 @@ public class IrisRecognitionPanel extends JPanel{
             int[][][] newMatrix = IrisRecognitionProcessor.generateIrisRectangle(originalMatrix, eyeCenter, pupilRadius, irisRadius);
             photoPanel.setImageMatrix(newMatrix);
             parentPanel.updateProjections();
+
+            generateCodeBtn.setEnabled(true);
+        });
+
+        generateCodeBtn.addActionListener(e -> {
+            parentPanel.saveUndoState(photoPanel.getImageMatrix());
+
+            int[][][] unwrappedIris = photoPanel.getImageMatrix();
+
+            IrisRecognitionProcessor.IrisTemplate template = IrisRecognitionProcessor.extractIrisCode(unwrappedIris);
+
+            // translate the 8x256 boolean array into an RGB image matrix
+            int rows = template.code.length;     // 8
+            int cols = template.code[0].length;  // 256
+            int[][][] codeImage = new int[rows][cols][3];
+
+            for (int y = 0; y < rows; y++) {
+                for (int x = 0; x < cols; x++) {
+                    // true=white, false=black
+                    int colorValue = template.code[y][x] ? 255 : 0;
+
+                    codeImage[y][x][0] = colorValue;
+                    codeImage[y][x][1] = colorValue;
+                    codeImage[y][x][2] = colorValue;
+                }
+            }
+
+            photoPanel.setImageMatrix(codeImage);
+            parentPanel.updateProjections();
         });
 
         this.add(titleLabel);
@@ -176,5 +209,7 @@ public class IrisRecognitionPanel extends JPanel{
         this.add(Box.createVerticalStrut(20));
         this.add(getIrisRectangleBtn);
         this.add(Box.createVerticalGlue());
+        this.add(Box.createVerticalStrut(20));
+        this.add(generateCodeBtn);
     }
 }
