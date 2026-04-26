@@ -95,21 +95,41 @@ public class MenuBar extends JMenuBar {
     }
 
     /**
+     * A reusable helper method to open a JFileChooser.
+     * @param parentComponent The UI component calling this dialog (for centering).
+     * @param dialogTitle The title of the window.
+     * @return The selected File object, or null if the user canceled.
+     */
+    public static File chooseImageFile(java.awt.Component parentComponent, String dialogTitle) {
+        JFileChooser fc = new JFileChooser();
+
+        if (dialogTitle != null && !dialogTitle.isEmpty()) {
+            fc.setDialogTitle(dialogTitle);
+        }
+
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "bmp");
+        fc.setFileFilter(filter);
+        fc.setAcceptAllFileFilterUsed(false);
+
+        fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
+
+        int result = fc.showOpenDialog(parentComponent);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            return fc.getSelectedFile();
+        }
+
+        return null;
+    }
+
+    /**
      * Opens a File Chooser to import a new image, updates the application state,
      * and auto-generates a default save filename.
      */
     private void onImport() {
-        JFileChooser fc = new JFileChooser();
+        File selectedFile = chooseImageFile(this, "Import Image");
 
-        FileNameExtensionFilter filter =
-                new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "bmp");
-        fc.setFileFilter(filter);
-        fc.setAcceptAllFileFilterUsed(false);
-
-        int result = fc.showOpenDialog(this);
-
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fc.getSelectedFile();
+        if (selectedFile != null) {
             String filepath = selectedFile.getAbsolutePath();
             String filename = selectedFile.getName();
 

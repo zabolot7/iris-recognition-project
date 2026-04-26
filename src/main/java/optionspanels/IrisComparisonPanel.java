@@ -4,6 +4,7 @@ import core.ImageProcessor;
 import core.IrisRecognitionProcessor;
 import core.OptionPanel;
 import core.PhotoPanel;
+import core.MenuBar;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -87,7 +88,30 @@ public class IrisComparisonPanel extends JPanel {
         calcMinDistanceBtn.setEnabled(false);
 
         choosePicturesBtn.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "File chooser will be implemented later.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            File file1 = MenuBar.chooseImageFile(this, "Select First Iris Image");
+            if (file1 == null) return;
+
+            File file2 = MenuBar.chooseImageFile(this, "Select Second Iris Image");
+            if (file2 == null) return;
+
+            try {
+                BufferedImage img1 = ImageIO.read(file1);
+                BufferedImage img2 = ImageIO.read(file2);
+
+                rawImage1 = convertToMatrix(img1);
+                rawImage2 = convertToMatrix(img2);
+
+                photoPanel.setDualImageMatrices(rawImage1, rawImage2);
+
+                template1 = null;
+                template2 = null;
+                calcDistanceBtn.setEnabled(false);
+                calcMinDistanceBtn.setEnabled(false);
+
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error reading image file.", "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         });
 
         calcCodesBtn.addActionListener(e -> {
