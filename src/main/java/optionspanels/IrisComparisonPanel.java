@@ -78,9 +78,13 @@ public class IrisComparisonPanel extends JPanel {
         JButton calcCodesBtn = new JButton("2. Calculate Iris Codes");
         calcCodesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton calcDistanceBtn = new JButton("3. Calculate Hamming Distance");
+        JButton calcDistanceBtn = new JButton("<html><center>3. Calculate Hamming Distance<br>(regular)</center></html>");
         calcDistanceBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         calcDistanceBtn.setEnabled(false);
+
+        JButton calcMinDistanceBtn = new JButton("<html><center>4. Calculate Hamming Distance<br>(with iris rotation)</center></html>");
+        calcMinDistanceBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        calcMinDistanceBtn.setEnabled(false);
 
         choosePicturesBtn.addActionListener(e -> {
             JOptionPane.showMessageDialog(this, "File chooser will be implemented later.", "Info", JOptionPane.INFORMATION_MESSAGE);
@@ -101,6 +105,7 @@ public class IrisComparisonPanel extends JPanel {
 
                 photoPanel.setDualImageMatrices(composite1, composite2);
                 calcDistanceBtn.setEnabled(true);
+                calcMinDistanceBtn.setEnabled(true);
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to extract codes.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -111,19 +116,15 @@ public class IrisComparisonPanel extends JPanel {
 
             double distance = IrisRecognitionProcessor.calculateHammingDistance(template1, template2);
 
-            String formattedDistance = String.format("%.3f", distance);
+            displayComparisonResult(distance);
+        });
 
-            String resultText;
-            if (distance < 0.32) {
-                resultText = "MATCH: These are likely the same eye.";
-            } else {
-                resultText = "NO MATCH: These are different eyes.";
-            }
+        calcMinDistanceBtn.addActionListener(e -> {
+            if (template1 == null || template2 == null) return;
 
-            JOptionPane.showMessageDialog(this,
-                    "Fractional Hamming Distance: " + formattedDistance + "\n\n" + resultText,
-                    "Comparison Result",
-                    JOptionPane.INFORMATION_MESSAGE);
+            double distance = IrisRecognitionProcessor.calculateMinHammingDistance(template1, template2);
+
+            displayComparisonResult(distance);
         });
 
         this.add(titleLabel);
@@ -133,7 +134,28 @@ public class IrisComparisonPanel extends JPanel {
         this.add(calcCodesBtn);
         this.add(Box.createVerticalStrut(20));
         this.add(calcDistanceBtn);
+        this.add(Box.createVerticalStrut(20));
+        this.add(calcMinDistanceBtn);
         this.add(Box.createVerticalGlue());
+    }
+
+    /**
+     * Helper to display the results of comparison between 2 eyes.
+     */
+    private void displayComparisonResult(double distance) {
+        String formattedDistance = String.format("%.3f", distance);
+
+        String resultText;
+        if (distance < 0.32) {
+            resultText = "MATCH: These are likely the same eye.";
+        } else {
+            resultText = "NO MATCH: These are likely different eyes.";
+        }
+
+        JOptionPane.showMessageDialog(this,
+                "Fractional Hamming Distance: " + formattedDistance + "\n\n" + resultText,
+                "Comparison Result",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
