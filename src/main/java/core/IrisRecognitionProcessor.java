@@ -511,4 +511,78 @@ public class IrisRecognitionProcessor {
         return template;
     }
 
+    /**
+     * Calculates the Hamming Distance between two IrisTemplates, only considering unmasked bits.
+     *
+     * @param templateA The first IrisTemplate.
+     * @param templateB The second IrisTemplate.
+     * @return The Hamming distance.
+     */
+    public static double calculateHammingDistance(IrisTemplate templateA, IrisTemplate templateB) {
+        int differingBits = 0;
+        int validBits = 0;
+
+        int rows = templateA.code.length;     // 8
+        int cols = templateA.code[0].length;  // 256
+
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                if (templateA.mask[y][x]) {
+                    validBits++;
+
+                    if (templateA.code[y][x] != templateB.code[y][x]) {
+                        differingBits++;
+                    }
+                }
+            }
+        }
+
+        if (validBits == 0) {
+            return 1.0;
+        }
+
+        // divide by the actual number of compared bits
+        return (double) differingBits / validBits;
+    }
+
+    /**
+     * Calculates the minimum Hamming Distance over 7 iris rotations
+     * (compensating for eye/head rotation during image acquisition)
+     *
+     * @param templateA The reference IrisTemplate.
+     * @param templateB The tested IrisTemplate to be rotated.
+     * @return The lowest fractional Hamming distance found among the rotations.
+     */
+    public static double calculateMinHammingDistance(IrisTemplate templateA, IrisTemplate templateB) {
+        double minDistance = 1.0;
+
+        int rows = templateB.code.length;
+        int cols = templateB.code[0].length;
+
+        for (int shift = -3; shift <= 3; shift++) {
+
+            IrisTemplate shiftedB = new IrisTemplate(rows, cols);
+
+            for (int y = 0; y < rows; y++) {
+                for (int x = 0; x < cols; x++) {
+                    int shiftedX = (x + shift) % cols;
+                    if (shiftedX < 0) {
+                        shiftedX += cols;
+                    }
+
+                    shiftedB.code[y][x] = templateB.code[y][shiftedX];
+                    shiftedB.mask[y][x] = templateB.mask[y][shiftedX];
+                }
+            }
+
+            double distance = calculateHammingDistance(templateA, shiftedB);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+            }
+        }
+
+        return minDistance;
+    }
+
 }

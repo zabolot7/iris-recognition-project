@@ -71,7 +71,7 @@ public class IrisRecognitionPanel extends JPanel{
         getIrisRectangleBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         getIrisRectangleBtn.setEnabled(false);
 
-        JButton generateCodeBtn = new JButton("9. Generate iris code");
+        JButton generateCodeBtn = new JButton("9. Generate iris code (mask)");
         generateCodeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         generateCodeBtn.setEnabled(false);
 

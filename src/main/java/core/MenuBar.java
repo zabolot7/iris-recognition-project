@@ -1,7 +1,7 @@
 package core;
 
-import optionspanels.GrayscalePanel;
 import optionspanels.IrisRecognitionPanel;
+import optionspanels.IrisComparisonPanel;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -250,11 +250,15 @@ public class MenuBar extends JMenuBar {
     private JMenu setupIrisRecognitionMenu() {
         JMenu irisRecognitionMenu = new JMenu("Iris recognition");
 
-        JMenuItem startRecognitionItem = new JMenuItem("Prepare");
+        JMenuItem startRecognitionItem = new JMenuItem("Show process");
+
+        JMenuItem compareTwoPicsItem = new JMenuItem("Compare 2 iris pictures");
 
         startRecognitionItem.addActionListener(e -> optionPanel.loadToolPanel(new IrisRecognitionPanel(photoPanel, optionPanel)));
+        compareTwoPicsItem.addActionListener(e -> optionPanel.loadToolPanel(new IrisComparisonPanel(photoPanel, optionPanel)));
 
         irisRecognitionMenu.add(startRecognitionItem);
+        irisRecognitionMenu.add(compareTwoPicsItem);
 
         return irisRecognitionMenu;
     }

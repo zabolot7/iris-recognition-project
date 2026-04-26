@@ -29,6 +29,11 @@ public class PhotoPanel extends JPanel {
     private Image scaledImage;
     private int[][][] imageMatrix;
 
+    private BufferedImage image2;
+    private Image scaledImage2;
+    private int[][][] imageMatrix2;
+    private boolean dualMode = false;
+
     private JPanel wrapperPanel;
     private JPanel imageCanvas;
     private ChartPanel topChartPanel;
@@ -50,8 +55,14 @@ public class PhotoPanel extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (scaledImage != null) {
+                if (!dualMode && scaledImage != null) {
                     g.drawImage(scaledImage, 0, 0, this);
+                } else if (dualMode && scaledImage != null && scaledImage2 != null) {
+                    // Draw Image 1 on the left
+                    g.drawImage(scaledImage, 0, 0, this);
+
+                    // Draw Image 2 to the right of Image 1 (plus 10px padding)
+                    g.drawImage(scaledImage2, scaledImage.getWidth(null) + 10, 0, this);
                 }
             }
         };
@@ -196,7 +207,7 @@ public class PhotoPanel extends JPanel {
     }
 
     /**
-     * Recalculates the scaling of the image and projection charts to ensure they fit
+     * Recalculates the scaling of the image(s) and projection charts to ensure they fit
      * the available window space with correct aspect ratio.
      */
     public void recalculateSize() {
@@ -215,24 +226,54 @@ public class PhotoPanel extends JPanel {
 
         if (maxImgW <= 0 || maxImgH <= 0) return;
 
-        double scale = Math.min((double) maxImgW / image.getWidth(), (double) maxImgH / image.getHeight());
+        int totalCanvasWidth = 0;
+        int totalCanvasHeight = 0;
 
-        int scaledW = (int) Math.round(image.getWidth() * scale);
-        int scaledH = (int) Math.round(image.getHeight() * scale);
+        if (!dualMode) {
+            double scale = Math.min((double) maxImgW / image.getWidth(), (double) maxImgH / image.getHeight());
 
-        scaledImage = image.getScaledInstance(scaledW, scaledH, Image.SCALE_SMOOTH);
+            int scaledW = (int) Math.round(image.getWidth() * scale);
+            int scaledH = (int) Math.round(image.getHeight() * scale);
 
-        Dimension imgDim = new Dimension(scaledW, scaledH);
-        imageCanvas.setPreferredSize(imgDim);
-        imageCanvas.setMinimumSize(imgDim);
-        imageCanvas.setMaximumSize(imgDim);
+            scaledImage = image.getScaledInstance(scaledW, scaledH, Image.SCALE_SMOOTH);
 
-        Dimension topDim = new Dimension(scaledW, chartThicknessY);
+            totalCanvasWidth = scaledW;
+            totalCanvasHeight = scaledH;
+
+            Dimension imgDim = new Dimension(totalCanvasWidth, totalCanvasHeight);
+            imageCanvas.setPreferredSize(imgDim);
+            imageCanvas.setMinimumSize(imgDim);
+            imageCanvas.setMaximumSize(imgDim);
+
+        } else {
+            int totalWidth = image.getWidth() + image2.getWidth() + 10; // 10px padding
+            int maxHeight = Math.max(image.getHeight(), image2.getHeight());
+
+            double scale = Math.min((double) maxImgW / totalWidth, (double) maxImgH / maxHeight);
+
+            int scaledW1 = (int) Math.round(image.getWidth() * scale);
+            int scaledH1 = (int) Math.round(image.getHeight() * scale);
+            int scaledW2 = (int) Math.round(image2.getWidth() * scale);
+            int scaledH2 = (int) Math.round(image2.getHeight() * scale);
+
+            scaledImage = image.getScaledInstance(scaledW1, scaledH1, Image.SCALE_SMOOTH);
+            scaledImage2 = image2.getScaledInstance(scaledW2, scaledH2, Image.SCALE_SMOOTH);
+
+            totalCanvasWidth = scaledW1 + scaledW2 + 10;
+            totalCanvasHeight = Math.max(scaledH1, scaledH2);
+
+            Dimension imgDim = new Dimension(totalCanvasWidth, totalCanvasHeight);
+            imageCanvas.setPreferredSize(imgDim);
+            imageCanvas.setMinimumSize(imgDim);
+            imageCanvas.setMaximumSize(imgDim);
+        }
+
+        Dimension topDim = new Dimension(totalCanvasWidth, chartThicknessY);
         topChartPanel.setPreferredSize(topDim);
         topChartPanel.setMinimumSize(topDim);
         topChartPanel.setMaximumSize(topDim);
 
-        Dimension sideDim = new Dimension(chartThicknessX, scaledH);
+        Dimension sideDim = new Dimension(chartThicknessX, totalCanvasHeight);
         sideChartPanel.setPreferredSize(sideDim);
         sideChartPanel.setMinimumSize(sideDim);
         sideChartPanel.setMaximumSize(sideDim);
@@ -289,6 +330,7 @@ public class PhotoPanel extends JPanel {
      * @param imageMatrix The new 3D pixel array to display.
      */
     public void setImageMatrix(int[][][] imageMatrix) {
+        this.dualMode = false;
         this.imageMatrix = imageMatrix;
         int height = imageMatrix.length;
         int width = imageMatrix[0].length;
@@ -309,9 +351,9 @@ public class PhotoPanel extends JPanel {
         }
 
         if (imageCanvas.getPreferredSize().width > 0) {
-            scaledImage = image.getScaledInstance(imageCanvas.getPreferredSize().width, imageCanvas.getPreferredSize().height, Image.SCALE_SMOOTH);
+            recalculateSize();
+            if (imageCanvas != null) imageCanvas.repaint();
         }
-        if (imageCanvas != null) imageCanvas.repaint();
     }
 
     /**
@@ -322,4 +364,66 @@ public class PhotoPanel extends JPanel {
     public BufferedImage getBufferedImage() {
         return this.image;
     }
+
+
+
+    public void setDualImageMatrices(int[][][] matrix1, int[][][] matrix2) {
+        this.dualMode = true;
+        this.imageMatrix = matrix1;
+        this.imageMatrix2 = matrix2;
+
+        int h1 = matrix1.length;
+        int w1 = matrix1[0].length;
+        int h2 = matrix2.length;
+        int w2 = matrix2[0].length;
+
+        image = new BufferedImage(w1, h1, BufferedImage.TYPE_INT_RGB);
+        image2 = new BufferedImage(w2, h2, BufferedImage.TYPE_INT_RGB);
+
+        // Copy pixels for Image 1
+        for (int y = 0; y < h1; y++) {
+            for (int x = 0; x < w1; x++) {
+                int rgb = (255 << 24) | (matrix1[y][x][0] << 16) | (matrix1[y][x][1] << 8) | matrix1[y][x][2];
+                image.setRGB(x, y, rgb);
+            }
+        }
+
+        // Copy pixels for Image 2
+        for (int y = 0; y < h2; y++) {
+            for (int x = 0; x < w2; x++) {
+                int rgb = (255 << 24) | (matrix2[y][x][0] << 16) | (matrix2[y][x][1] << 8) | matrix2[y][x][2];
+                image2.setRGB(x, y, rgb);
+            }
+        }
+
+        recalculateSize();
+    }
+
+    /**
+     * Retrieves the second image matrix if dual mode is active.
+     *
+     * @return The 3D array [Y][X][RGB] of the second image, or null.
+     */
+    public int[][][] getImageMatrix2() {
+        return imageMatrix2;
+    }
+
+    /**
+     * Retrieves the second BufferedImage if dual mode is active.
+     *
+     * @return The second BufferedImage, or null.
+     */
+    public BufferedImage getBufferedImage2() {
+        return image2;
+    }
+
+    /**
+     * Checks if the panel is currently displaying two images.
+     *
+     * @return True if dual mode is active.
+     */
+    public boolean isDualMode() {
+        return dualMode;
+    }
+
 }
