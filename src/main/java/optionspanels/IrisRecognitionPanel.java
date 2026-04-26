@@ -2,11 +2,16 @@ package optionspanels;
 
 import core.ImageProcessor;
 import core.IrisRecognitionProcessor;
+import core.MenuBar;
 import core.OptionPanel;
 import core.PhotoPanel;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class IrisRecognitionPanel extends JPanel{
     private PhotoPanel photoPanel;
@@ -29,16 +34,32 @@ public class IrisRecognitionPanel extends JPanel{
 
         this.originalMatrix = photoPanel.getImageMatrix();
         parentPanel.saveUndoState(originalMatrix);
-
         boundaryMode = parentPanel.getBoundaryMode();
 
+        loadDefaultImage();
+
         buildUI();
+    }
+
+    private void loadDefaultImage() {
+        try {
+            BufferedImage img = ImageIO.read(new File("src/MMU-Iris-Database/1/left/aeval1.bmp"));
+            originalMatrix = photoPanel.createImageMatrix(img);
+            photoPanel.setImageMatrix(originalMatrix);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Could not load default image.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void buildUI() {
         JLabel titleLabel = new JLabel("Prepare for iris recognition:");
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
+
+        JButton choosePictureBtn = new JButton("0. Choose a picture");
+        choosePictureBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JButton grayscaleBtn = new JButton("1. Convert to Grayscale");
         grayscaleBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -74,6 +95,23 @@ public class IrisRecognitionPanel extends JPanel{
         JButton generateCodeBtn = new JButton("9. Generate iris code (mask)");
         generateCodeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         generateCodeBtn.setEnabled(false);
+
+        choosePictureBtn.addActionListener(e -> {
+            File file = MenuBar.chooseImageFile(this, "Select First Iris Image");
+            if (file == null) return;
+
+            try {
+                BufferedImage img1 = ImageIO.read(file);
+
+                originalMatrix = photoPanel.createImageMatrix(img1);
+
+                photoPanel.setImageMatrix(originalMatrix);
+
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error reading image file.", "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        });
 
         grayscaleBtn.addActionListener(e -> {
             parentPanel.saveUndoState(photoPanel.getImageMatrix());
@@ -171,27 +209,17 @@ public class IrisRecognitionPanel extends JPanel{
 
             IrisRecognitionProcessor.IrisTemplate template = IrisRecognitionProcessor.extractIrisCode(unwrappedIris);
 
-            // translate the 8x256 boolean array into an RGB image matrix
-            int rows = template.code.length;     // 8
-            int cols = template.code[0].length;  // 256
-            int[][][] codeImage = new int[rows][cols][3];
+            int[][][] codeImage = IrisRecognitionProcessor.createVisualBarcode(template);
 
-            for (int y = 0; y < rows; y++) {
-                for (int x = 0; x < cols; x++) {
-                    // true=white, false=black
-                    int colorValue = template.code[y][x] ? 255 : 0;
+            int[][][] fullImage = IrisRecognitionProcessor.createCompositeMatrix(unwrappedIris, codeImage);
 
-                    codeImage[y][x][0] = colorValue;
-                    codeImage[y][x][1] = colorValue;
-                    codeImage[y][x][2] = colorValue;
-                }
-            }
-
-            photoPanel.setImageMatrix(codeImage);
+            photoPanel.setImageMatrix(fullImage);
             parentPanel.updateProjections();
         });
 
         this.add(titleLabel);
+        this.add(Box.createVerticalStrut(20));
+        this.add(choosePictureBtn);
         this.add(Box.createVerticalStrut(20));
         this.add(grayscaleBtn);
         this.add(Box.createVerticalStrut(20));

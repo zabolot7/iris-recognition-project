@@ -585,4 +585,77 @@ public class IrisRecognitionProcessor {
         return minDistance;
     }
 
+    /**
+     * Converts the boolean arrays into a visual RGB matrix (White=1, Black=0, Gray=Masked).
+     */
+    public static int[][][] createVisualBarcode(IrisRecognitionProcessor.IrisTemplate template) {
+        int rows = template.code.length;
+        int cols = template.code[0].length;
+        int[][][] codeImage = new int[rows][cols][3];
+
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                if (!template.mask[y][x]) {
+                    codeImage[y][x][0] = 128; // Gray for masked area
+                    codeImage[y][x][1] = 128;
+                    codeImage[y][x][2] = 128;
+                } else {
+                    int colorValue = template.code[y][x] ? 255 : 0;
+                    codeImage[y][x][0] = colorValue;
+                    codeImage[y][x][1] = colorValue;
+                    codeImage[y][x][2] = colorValue;
+                }
+            }
+        }
+        return codeImage;
+    }
+
+    /**
+     * Stitches the original image and the visual barcode together vertically.
+     * Scales the iris code to match the width of the original image so it looks clean.
+     */
+    public static int[][][] createCompositeMatrix(int[][][] original, int[][][] barcode) {
+        int origH = original.length;
+        int origW = original[0].length;
+
+        int barH = barcode.length;    // 8
+        int barW = barcode[0].length; // 256
+
+        int targetBarH = 8;
+        int targetBarW = origW;
+        int padding = 0;
+
+        int totalH = origH + padding + targetBarH;
+        int[][][] composite = new int[totalH][origW][3];
+
+        for (int y = 0; y < totalH; y++) {
+            for (int x = 0; x < origW; x++) {
+                composite[y][x][0] = 240;
+                composite[y][x][1] = 240;
+                composite[y][x][2] = 240;
+            }
+        }
+
+        for (int y = 0; y < origH; y++) {
+            for (int x = 0; x < origW; x++) {
+                composite[y][x][0] = original[y][x][0];
+                composite[y][x][1] = original[y][x][1];
+                composite[y][x][2] = original[y][x][2];
+            }
+        }
+
+        for (int y = 0; y < targetBarH; y++) {
+            for (int x = 0; x < targetBarW; x++) {
+                int srcY = (int) (y * ((double) barH / targetBarH));
+                int srcX = (int) (x * ((double) barW / targetBarW));
+
+                composite[origH + padding + y][x][0] = barcode[srcY][srcX][0];
+                composite[origH + padding + y][x][1] = barcode[srcY][srcX][1];
+                composite[origH + padding + y][x][2] = barcode[srcY][srcX][2];
+            }
+        }
+
+        return composite;
+    }
+
 }

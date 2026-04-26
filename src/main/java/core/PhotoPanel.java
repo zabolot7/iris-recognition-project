@@ -101,7 +101,7 @@ public class PhotoPanel extends JPanel {
         File imageFile = new File("src/testImage.bmp");
         try {
             image = ImageIO.read(imageFile);
-            createImageMatrix();
+            imageMatrix = createImageMatrix(image);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -291,7 +291,7 @@ public class PhotoPanel extends JPanel {
         File imageFile = new File(filepath);
         try {
             image = ImageIO.read(imageFile);
-            createImageMatrix();
+            imageMatrix = createImageMatrix(image);
             recalculateSize();
         } catch (IOException e) {
             e.printStackTrace();
@@ -301,10 +301,10 @@ public class PhotoPanel extends JPanel {
     /**
      * Converts a BufferedImage into a 3D pixel array [Y][X][RGB].
      */
-    private void createImageMatrix() {
+    public int[][][] createImageMatrix(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
-        imageMatrix = new int[height][width][3];
+        int[][][] imageMatrix = new int[height][width][3];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int rgb = image.getRGB(x, y);
@@ -313,6 +313,8 @@ public class PhotoPanel extends JPanel {
                 imageMatrix[y][x][2] = rgb & 0xFF;
             }
         }
+
+        return imageMatrix;
     }
 
     /**

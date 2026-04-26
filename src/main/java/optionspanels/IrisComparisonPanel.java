@@ -40,10 +40,10 @@ public class IrisComparisonPanel extends JPanel {
     private void loadDefaultImages() {
         try {
             BufferedImage img1 = ImageIO.read(new File("src/MMU-Iris-Database/1/left/aeval1.bmp"));
-            BufferedImage img2 = ImageIO.read(new File("src/MMU-Iris-Database/1/left/aeval2.bmp")); // Provide a second valid path
+            BufferedImage img2 = ImageIO.read(new File("src/MMU-Iris-Database/1/left/aeval2.bmp"));
 
-            rawImage1 = convertToMatrix(img1);
-            rawImage2 = convertToMatrix(img2);
+            rawImage1 = photoPanel.createImageMatrix(img1);
+            rawImage2 = photoPanel.createImageMatrix(img2);
 
             photoPanel.setDualImageMatrices(rawImage1, rawImage2);
 
@@ -53,37 +53,22 @@ public class IrisComparisonPanel extends JPanel {
         }
     }
 
-    private int[][][] convertToMatrix(BufferedImage img) {
-        int w = img.getWidth();
-        int h = img.getHeight();
-        int[][][] matrix = new int[h][w][3];
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                int rgb = img.getRGB(x, y);
-                matrix[y][x][0] = (rgb >> 16) & 0xFF;
-                matrix[y][x][1] = (rgb >> 8) & 0xFF;
-                matrix[y][x][2] = rgb & 0xFF;
-            }
-        }
-        return matrix;
-    }
-
     private void buildUI() {
         JLabel titleLabel = new JLabel("Compare two irises:");
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
 
-        JButton choosePicturesBtn = new JButton("1. Choose Pictures");
+        JButton choosePicturesBtn = new JButton("0. Choose Pictures");
         choosePicturesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton calcCodesBtn = new JButton("2. Calculate Iris Codes");
+        JButton calcCodesBtn = new JButton("1. Calculate Iris Codes");
         calcCodesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton calcDistanceBtn = new JButton("<html><center>3. Calculate Hamming Distance<br>(regular)</center></html>");
+        JButton calcDistanceBtn = new JButton("<html><center>2. Calculate Hamming Distance<br>(regular)</center></html>");
         calcDistanceBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         calcDistanceBtn.setEnabled(false);
 
-        JButton calcMinDistanceBtn = new JButton("<html><center>4. Calculate Hamming Distance<br>(with iris rotation)</center></html>");
+        JButton calcMinDistanceBtn = new JButton("<html><center>3. Calculate Hamming Distance<br>(with iris rotation)</center></html>");
         calcMinDistanceBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         calcMinDistanceBtn.setEnabled(false);
 
@@ -98,8 +83,8 @@ public class IrisComparisonPanel extends JPanel {
                 BufferedImage img1 = ImageIO.read(file1);
                 BufferedImage img2 = ImageIO.read(file2);
 
-                rawImage1 = convertToMatrix(img1);
-                rawImage2 = convertToMatrix(img2);
+                rawImage1 = photoPanel.createImageMatrix(img1);
+                rawImage2 = photoPanel.createImageMatrix(img2);
 
                 photoPanel.setDualImageMatrices(rawImage1, rawImage2);
 
@@ -121,11 +106,11 @@ public class IrisComparisonPanel extends JPanel {
             template2 = processImageToTemplate(rawImage2);
 
             if (template1 != null && template2 != null) {
-                int[][][] vis1 = createVisualBarcode(template1);
-                int[][][] vis2 = createVisualBarcode(template2);
+                int[][][] vis1 = IrisRecognitionProcessor.createVisualBarcode(template1);
+                int[][][] vis2 = IrisRecognitionProcessor.createVisualBarcode(template2);
 
-                int[][][] composite1 = createCompositeMatrix(rawImage1, vis1);
-                int[][][] composite2 = createCompositeMatrix(rawImage2, vis2);
+                int[][][] composite1 = IrisRecognitionProcessor.createCompositeMatrix(rawImage1, vis1);
+                int[][][] composite2 = IrisRecognitionProcessor.createCompositeMatrix(rawImage2, vis2);
 
                 photoPanel.setDualImageMatrices(composite1, composite2);
                 calcDistanceBtn.setEnabled(true);
@@ -204,76 +189,4 @@ public class IrisComparisonPanel extends JPanel {
         }
     }
 
-    /**
-     * Converts the boolean arrays into a visual RGB matrix (White=1, Black=0, Gray=Masked).
-     */
-    private int[][][] createVisualBarcode(IrisRecognitionProcessor.IrisTemplate template) {
-        int rows = template.code.length;
-        int cols = template.code[0].length;
-        int[][][] codeImage = new int[rows][cols][3];
-
-        for (int y = 0; y < rows; y++) {
-            for (int x = 0; x < cols; x++) {
-                if (!template.mask[y][x]) {
-                    codeImage[y][x][0] = 128; // Gray for masked area
-                    codeImage[y][x][1] = 128;
-                    codeImage[y][x][2] = 128;
-                } else {
-                    int colorValue = template.code[y][x] ? 255 : 0;
-                    codeImage[y][x][0] = colorValue;
-                    codeImage[y][x][1] = colorValue;
-                    codeImage[y][x][2] = colorValue;
-                }
-            }
-        }
-        return codeImage;
-    }
-
-    /**
-     * Stitches the original image and the visual barcode together vertically.
-     * Scales the barcode to match the width of the original image so it looks clean.
-     */
-    private int[][][] createCompositeMatrix(int[][][] original, int[][][] barcode) {
-        int origH = original.length;
-        int origW = original[0].length;
-
-        int barH = barcode.length;    // 8
-        int barW = barcode[0].length; // 256
-
-        int targetBarH = 8;
-        int targetBarW = origW;
-        int padding = 0;
-
-        int totalH = origH + padding + targetBarH;
-        int[][][] composite = new int[totalH][origW][3];
-
-        for (int y = 0; y < totalH; y++) {
-            for (int x = 0; x < origW; x++) {
-                composite[y][x][0] = 240;
-                composite[y][x][1] = 240;
-                composite[y][x][2] = 240;
-            }
-        }
-
-        for (int y = 0; y < origH; y++) {
-            for (int x = 0; x < origW; x++) {
-                composite[y][x][0] = original[y][x][0];
-                composite[y][x][1] = original[y][x][1];
-                composite[y][x][2] = original[y][x][2];
-            }
-        }
-
-        for (int y = 0; y < targetBarH; y++) {
-            for (int x = 0; x < targetBarW; x++) {
-                int srcY = (int) (y * ((double) barH / targetBarH));
-                int srcX = (int) (x * ((double) barW / targetBarW));
-
-                composite[origH + padding + y][x][0] = barcode[srcY][srcX][0];
-                composite[origH + padding + y][x][1] = barcode[srcY][srcX][1];
-                composite[origH + padding + y][x][2] = barcode[srcY][srcX][2];
-            }
-        }
-
-        return composite;
-    }
 }
