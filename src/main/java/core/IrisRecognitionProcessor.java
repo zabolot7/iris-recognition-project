@@ -116,7 +116,6 @@ public class IrisRecognitionProcessor {
         int max = -1;
         int firstMaxI = 0;
         int lastMaxI = 0;
-
         for (int i = 0; i < verticalProj.length; i++) {
             if (verticalProj[i] > max) {
                 max = verticalProj[i];
@@ -128,10 +127,17 @@ public class IrisRecognitionProcessor {
         }
         int centerX = (firstMaxI + lastMaxI) / 2;
 
+        int lastX = centerX;
+        while (lastX < width && verticalProj[lastX] > 0) lastX++;
+
+        int firstX = centerX;
+        while (firstX >= 0 && verticalProj[firstX] > 0) firstX--;
+
+        centerX = (firstX + lastX) / 2;
+
         max = -1;
         firstMaxI = 0;
         lastMaxI = 0;
-
         for (int i = 0; i < horizontalProj.length; i++) {
             if (horizontalProj[i] > max) {
                 max = horizontalProj[i];
@@ -142,6 +148,14 @@ public class IrisRecognitionProcessor {
             }
         }
         int centerY = (firstMaxI + lastMaxI) / 2;
+
+        int lastY = centerY;
+        while (lastY < height && horizontalProj[lastY] > 0) lastY++;
+
+        int firstY = centerY;
+        while (firstY >= 0 && horizontalProj[firstY] > 0) firstY--;
+
+        centerY = (firstY + lastY) / 2;
 
         return new int[]{centerX, centerY};
     }
@@ -156,10 +170,26 @@ public class IrisRecognitionProcessor {
     public static int calculateRadius(int[][][] originalMatrix, int[] center) {
         if (originalMatrix == null) return 0;
 
+        int width = originalMatrix[0].length;
+
         int[][] projections = ImageProcessor.getProjections(originalMatrix);
         int[] verticalProj = projections[0];
 
-        return verticalProj[center[0]] / 2;
+        int lastX = center[0];
+        int radiusX1 = 0;
+        while (lastX < width && verticalProj[lastX] > 0) {
+            lastX++;
+            radiusX1++;
+        }
+
+        int firstX = center[0];
+        int radiusX2 = 0;
+        while (firstX >= 0 && verticalProj[firstX] > 0) {
+            firstX--;
+            radiusX2++;
+        }
+
+        return (radiusX1 + radiusX2) / 2;
     }
 
     /**
