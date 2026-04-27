@@ -8,6 +8,7 @@ import core.PhotoPanel;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -24,6 +25,7 @@ public class IrisRecognitionPanel extends JPanel{
     private int[] eyeCenter;
     private int irisRadius;
     private int pupilRadius;
+    private int[][][] barcodeMatrix;
 
     public IrisRecognitionPanel(PhotoPanel photoPanel, OptionPanel parentPanel) {
         this.photoPanel = photoPanel;
@@ -46,6 +48,7 @@ public class IrisRecognitionPanel extends JPanel{
             BufferedImage img = ImageIO.read(new File("src/MMU-Iris-Database/1/left/aeval1.bmp"));
             originalMatrix = photoPanel.createImageMatrix(img);
             photoPanel.setImageMatrix(originalMatrix);
+            photoPanel.setCurrentFilename("aeval1");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,9 +95,13 @@ public class IrisRecognitionPanel extends JPanel{
         getIrisRectangleBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         getIrisRectangleBtn.setEnabled(false);
 
-        JButton generateCodeBtn = new JButton("9. Generate iris code (mask)");
+        JButton generateCodeBtn = new JButton("9. Generate iris code (with mask)");
         generateCodeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         generateCodeBtn.setEnabled(false);
+
+        JButton saveCodeBtn = new JButton("10. Save iris code");
+        saveCodeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        saveCodeBtn.setEnabled(false);
 
         choosePictureBtn.addActionListener(e -> {
             File file = MenuBar.chooseImageFile(this, "Select First Iris Image");
@@ -106,6 +113,7 @@ public class IrisRecognitionPanel extends JPanel{
                 originalMatrix = photoPanel.createImageMatrix(img1);
 
                 photoPanel.setImageMatrix(originalMatrix);
+                photoPanel.setCurrentFilename(file.getName());
 
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, "Error reading image file.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -210,11 +218,106 @@ public class IrisRecognitionPanel extends JPanel{
             IrisRecognitionProcessor.IrisTemplate template = IrisRecognitionProcessor.extractIrisCode(unwrappedIris);
 
             int[][][] codeImage = IrisRecognitionProcessor.createVisualBarcode(template);
+            barcodeMatrix = codeImage;
 
             int[][][] fullImage = IrisRecognitionProcessor.createCompositeMatrix(unwrappedIris, codeImage);
 
             photoPanel.setImageMatrix(fullImage);
             parentPanel.updateProjections();
+            saveCodeBtn.setEnabled(true);
+        });
+
+        saveCodeBtn.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            fc.setDialogTitle("Save Iris Code");
+
+            // filetype filters
+            FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("PNG Image (*.png)", "png");
+            FileNameExtensionFilter jpgFilter = new FileNameExtensionFilter("JPEG Image (*.jpg; *.jpeg)", "jpg", "jpeg");
+            FileNameExtensionFilter bmpFilter = new FileNameExtensionFilter("BMP Image (*.bmp)", "bmp");
+
+            fc.addChoosableFileFilter(pngFilter);
+            fc.addChoosableFileFilter(jpgFilter);
+            fc.addChoosableFileFilter(bmpFilter);
+
+            // png as default
+            fc.setFileFilter(pngFilter);
+            fc.setAcceptAllFileFilterUsed(false);
+
+            // dynamically get the original filename from the JFrame's title
+            String originalName = photoPanel.getCurrentFilename();
+            String baseName = "iris_code";
+
+            if (originalName != null && !originalName.equals("untitled_image")) {
+                int dotIndex = originalName.lastIndexOf('.');
+                if (dotIndex > 0) {
+                    baseName = originalName.substring(0, dotIndex) + "_code";
+                } else {
+                    baseName = originalName + "_code";
+                }
+            }
+
+            // Set the default name (e.g., "aeval1_code")
+            fc.setSelectedFile(new File(baseName));
+
+            int result = fc.showSaveDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File fileToSave = fc.getSelectedFile();
+                String filePath = fileToSave.getAbsolutePath();
+
+                javax.swing.filechooser.FileFilter selectedFilter = fc.getFileFilter();
+                String format = "png";
+                if (selectedFilter == jpgFilter) {
+                    format = "jpg";
+                } else if (selectedFilter == bmpFilter) {
+                    format = "bmp";
+                }
+
+                // add file extension if missing
+                if (!filePath.toLowerCase().endsWith("." + format)) {
+                    fileToSave = new File(filePath + "." + format);
+                }
+
+                try {
+                    java.awt.image.BufferedImage imageToSave = null;
+
+                    if (barcodeMatrix != null) {
+                        int h = barcodeMatrix.length;
+                        int w = barcodeMatrix[0].length;
+                        imageToSave = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_RGB);
+
+                        for (int y = 0; y < h; y++) {
+                            for (int x = 0; x < w; x++) {
+                                int r = barcodeMatrix[y][x][0];
+                                int g = barcodeMatrix[y][x][1];
+                                int b = barcodeMatrix[y][x][2];
+                                int rgb = (255 << 24) | (r << 16) | (g << 8) | b;
+                                imageToSave.setRGB(x, y, rgb);
+                            }
+                        }
+                    }
+
+                    if (imageToSave != null) {
+                        ImageIO.write(imageToSave, format, fileToSave);
+                        JOptionPane.showMessageDialog(this,
+                                "Iris code saved successfully!",
+                                "Success",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "There is no iris code to save.",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Error saving iris code: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                }
+            }
         });
 
         this.add(titleLabel);
@@ -236,8 +339,10 @@ public class IrisRecognitionPanel extends JPanel{
         this.add(allBoundariesBtn);
         this.add(Box.createVerticalStrut(20));
         this.add(getIrisRectangleBtn);
-        this.add(Box.createVerticalGlue());
         this.add(Box.createVerticalStrut(20));
         this.add(generateCodeBtn);
+        this.add(Box.createVerticalStrut(20));
+        this.add(saveCodeBtn);
+        this.add(Box.createVerticalGlue());
     }
 }

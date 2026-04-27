@@ -25,7 +25,7 @@ public class App {
 
         SwingUtilities.invokeLater(() -> {
 
-            JFrame frame = new JFrame("Default Image");
+            JFrame frame = new JFrame("Iris Recognition App");
             frame.setSize(800, 600);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());

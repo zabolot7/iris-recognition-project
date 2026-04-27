@@ -58,10 +58,10 @@ public class IrisComparisonPanel extends JPanel {
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
 
-        JButton choosePicturesBtn = new JButton("0. Choose Pictures");
+        JButton choosePicturesBtn = new JButton("<html><center>0. Choose Pictures</center></html>");
         choosePicturesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton calcCodesBtn = new JButton("1. Calculate Iris Codes");
+        JButton calcCodesBtn = new JButton("<html><center>1. Calculate Iris Codes</center></html>");
         calcCodesBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JButton calcDistanceBtn = new JButton("<html><center>2. Calculate Hamming Distance<br>(regular)</center></html>");

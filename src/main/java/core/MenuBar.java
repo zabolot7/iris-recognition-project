@@ -141,7 +141,6 @@ public class MenuBar extends JMenuBar {
             }
 
             photoPanel.changeImage(filepath);
-            frame.setTitle(filename);
             lastImageMatrix = photoPanel.getImageMatrix();
             originalImageMatrix = photoPanel.getImageMatrix();
             editMenu.setLastImageMatrix(lastImageMatrix);

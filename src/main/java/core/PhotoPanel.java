@@ -28,6 +28,7 @@ public class PhotoPanel extends JPanel {
     private BufferedImage image;
     private Image scaledImage;
     private int[][][] imageMatrix;
+    private String currentFilename = "aeval1";
 
     private BufferedImage image2;
     private Image scaledImage2;
@@ -289,6 +290,7 @@ public class PhotoPanel extends JPanel {
      */
     public void changeImage(String filepath){
         File imageFile = new File(filepath);
+        this.currentFilename = imageFile.getName();
         try {
             image = ImageIO.read(imageFile);
             imageMatrix = createImageMatrix(image);
@@ -426,6 +428,20 @@ public class PhotoPanel extends JPanel {
      */
     public boolean isDualMode() {
         return dualMode;
+    }
+
+    /**
+     * Retrieves the original filename of the currently loaded image.
+     */
+    public String getCurrentFilename() {
+        return currentFilename;
+    }
+
+    /**
+     * Updates the current filename being tracked by the panel.
+     */
+    public void setCurrentFilename(String currentFilename) {
+        this.currentFilename = currentFilename;
     }
 
 }
