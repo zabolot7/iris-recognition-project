@@ -5,98 +5,59 @@ import optionspanels.IrisComparisonPanel;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
-import javax.imageio.ImageIO;
-import java.io.IOException;
 
 /**
- * Constructs and manages the main application menu bar (File, Display, Edit, Settings).
- * Responsible for importing/saving images.
+ * Constructs and manages the main application menu bar.
+ * Contains tabs to switch between Iris Recognition and Iris Comparison modes.
  */
 public class MenuBar extends JMenuBar {
     private PhotoPanel photoPanel;
-    private int[][][] lastImageMatrix;
-    private int[][][] originalImageMatrix;
-    private JFrame frame;
     private OptionPanel optionPanel;
-    private EditMenu editMenu;
-    private String currentFilename = "untitled_image";
+    private JFrame frame;
 
     /**
-     * Initializes the menu bar and builds all drop-down menus.
+     * Initializes the menu bar with direct, clickable tabs.
      *
      * @param frame The parent JFrame.
      * @param photoPanel The main image display panel.
      * @param optionPanel The sidebar tool panel.
      */
     public MenuBar(JFrame frame, PhotoPanel photoPanel, OptionPanel optionPanel) {
-        this.photoPanel = photoPanel;
         this.frame = frame;
-        this.lastImageMatrix = photoPanel.getImageMatrix();
-        this.originalImageMatrix = photoPanel.getImageMatrix();
+        this.photoPanel = photoPanel;
         this.optionPanel = optionPanel;
 
-        JMenu fileMenu = setupFileMenu();
-        JMenu displayMenu = setupDisplayMenu();
-        editMenu = new EditMenu("Edit", photoPanel, lastImageMatrix, optionPanel, originalImageMatrix);
-        JMenu settingsMenu = setupSettingsMenu(optionPanel);
-        JMenu irisRecognitionMenu = setupIrisRecognitionMenu();
+        // 1. Create the top-level menus (acting as tabs)
+        JMenu recognitionTab = new JMenu("Iris Recognition");
+        JMenu comparisonTab = new JMenu("Iris Comparison");
 
-        optionPanel.setEditMenu(editMenu);
-
-        add(fileMenu);
-        add(displayMenu);
-        add(editMenu);
-        add(settingsMenu);
-        add(irisRecognitionMenu);
-    }
-
-    /**
-     * Constructs the "File" dropdown menu containing Import and Save actions.
-     *
-     * @return The fully configured File JMenu.
-     */
-    private JMenu setupFileMenu(){
-        JMenu fileMenu = new JMenu("File");
-
-        JMenuItem importItem = new JMenuItem("Import");
-        importItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
-        JMenuItem saveItem = new JMenuItem("Save");
-        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
-
-        importItem.addActionListener(e -> onImport());
-        saveItem.addActionListener(e -> onSave());
-
-        fileMenu.add(importItem);
-        fileMenu.add(saveItem);
-
-        return fileMenu;
-    }
-
-    /**
-     * Constructs the "Display" dropdown menu containing histogram toggles
-     * and projection chart toggles.
-     *
-     * @return The fully configured Display JMenu.
-     */
-    private JMenu setupDisplayMenu(){
-        JMenu displayMenu = new JMenu("Display");
-
-        JCheckBoxMenuItem toggleProjectionsItem = new JCheckBoxMenuItem("Show Projections");
-        toggleProjectionsItem.addActionListener(e -> {
-            photoPanel.setShowProjections(toggleProjectionsItem.isSelected());
-            photoPanel.updateProjections();
+        // 2. Add mouse listeners so they click like buttons
+        recognitionTab.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                optionPanel.loadToolPanel(new IrisRecognitionPanel(photoPanel, optionPanel));
+            }
         });
 
-        displayMenu.add(toggleProjectionsItem);
+        comparisonTab.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                optionPanel.loadToolPanel(new IrisComparisonPanel(photoPanel, optionPanel));
+            }
+        });
 
-        return displayMenu;
+        // 3. Add them to the MenuBar
+        add(recognitionTab);
+        add(comparisonTab);
     }
 
     /**
      * A reusable helper method to open a JFileChooser.
-     * @param parentComponent The UI component calling this dialog (for centering).
+     * Kept here because IrisRecognitionPanel and IrisComparisonPanel rely on it!
+     * * @param parentComponent The UI component calling this dialog (for centering).
      * @param dialogTitle The title of the window.
      * @return The selected File object, or null if the user canceled.
      */
@@ -121,165 +82,4 @@ public class MenuBar extends JMenuBar {
 
         return null;
     }
-
-    /**
-     * Opens a File Chooser to import a new image, updates the application state,
-     * and auto-generates a default save filename.
-     */
-    private void onImport() {
-        File selectedFile = chooseImageFile(this, "Import Image");
-
-        if (selectedFile != null) {
-            String filepath = selectedFile.getAbsolutePath();
-            String filename = selectedFile.getName();
-
-            int dotIndex = filename.lastIndexOf('.');
-            if (dotIndex > 0) {
-                currentFilename = filename.substring(0, dotIndex) + "_edited";
-            } else {
-                currentFilename = filename + "_edited";
-            }
-
-            photoPanel.changeImage(filepath);
-            lastImageMatrix = photoPanel.getImageMatrix();
-            originalImageMatrix = photoPanel.getImageMatrix();
-            editMenu.setLastImageMatrix(lastImageMatrix);
-            editMenu.setOriginalImageMatrix(originalImageMatrix);
-            optionPanel.refreshOnImport();
-            photoPanel.updateProjectionCharts(null, null);
-        }
-    }
-
-    /**
-     * Opens a File Chooser to save the current image to the disk.
-     */
-    private void onSave() {
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Save Image");
-
-        // filetype filters
-        FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("PNG Image (*.png)", "png");
-        FileNameExtensionFilter jpgFilter = new FileNameExtensionFilter("JPEG Image (*.jpg; *.jpeg)", "jpg", "jpeg");
-        FileNameExtensionFilter bmpFilter = new FileNameExtensionFilter("BMP Image (*.bmp)", "bmp");
-
-        fc.addChoosableFileFilter(pngFilter);
-        fc.addChoosableFileFilter(jpgFilter);
-        fc.addChoosableFileFilter(bmpFilter);
-
-        // png as default
-        fc.setFileFilter(pngFilter);
-        fc.setAcceptAllFileFilterUsed(false);
-
-        fc.setSelectedFile(new File(currentFilename));
-
-        int result = fc.showSaveDialog(this);
-
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fc.getSelectedFile();
-            String filePath = fileToSave.getAbsolutePath();
-
-            javax.swing.filechooser.FileFilter selectedFilter = fc.getFileFilter();
-            String format = "png";
-            if (selectedFilter == jpgFilter) {
-                format = "jpg";
-            } else if (selectedFilter == bmpFilter) {
-                format = "bmp";
-            }
-
-            // add file extension
-            if (!filePath.toLowerCase().endsWith("." + format)) {
-                fileToSave = new File(filePath + "." + format);
-            }
-
-            try {
-                java.awt.image.BufferedImage imageToSave = photoPanel.getBufferedImage();
-
-                if (imageToSave != null) {
-                    ImageIO.write(imageToSave, format, fileToSave);
-                    JOptionPane.showMessageDialog(frame,
-                            "Image saved successfully!",
-                            "Success",
-                            JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(frame,
-                            "There is no image to save.",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(frame,
-                        "Error saving image: " + ex.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * Constructs the "Settings" dropdown menu with Boundary Mode
-     * configurations for convolution filters.
-     *
-     * @param optionPanel The sidebar panel that stores the current Boundary Mode.
-     * @return The fully configured Settings JMenu.
-     */
-    private JMenu setupSettingsMenu(OptionPanel optionPanel) {
-        JMenu settingsMenu = new JMenu("Settings");
-        JMenu convMenu = new JMenu("Convolution filter options");
-
-        ButtonGroup group = new ButtonGroup();
-
-        JRadioButtonMenuItem cropItem = new JRadioButtonMenuItem("Crop the image");
-        JRadioButtonMenuItem keepItem = new JRadioButtonMenuItem("Keep original pixels");
-        JRadioButtonMenuItem blackItem = new JRadioButtonMenuItem("Assume outside is black");
-        JRadioButtonMenuItem whiteItem = new JRadioButtonMenuItem("Assume outside is white");
-        JRadioButtonMenuItem grayItem = new JRadioButtonMenuItem("Assume outside is gray");
-        JRadioButtonMenuItem copyItem = new JRadioButtonMenuItem("Copy outer-most pixel");
-        JRadioButtonMenuItem mirrorItem = new JRadioButtonMenuItem("Mirror outer-most pixels");
-
-        // set default
-        copyItem.setSelected(true);
-
-        cropItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.CROP));
-        keepItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.KEEP_ORIGINAL));
-        blackItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.PAD_BLACK));
-        whiteItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.PAD_WHITE));
-        grayItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.PAD_GRAY));
-        copyItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.REPLICATE));
-        mirrorItem.addActionListener(e -> optionPanel.setBoundaryMode(OptionPanel.BoundaryMode.MIRROR));
-
-        group.add(cropItem); group.add(keepItem); group.add(blackItem);
-        group.add(whiteItem); group.add(grayItem); group.add(copyItem); group.add(mirrorItem);
-
-        convMenu.add(cropItem); convMenu.add(keepItem);
-        convMenu.addSeparator();
-        convMenu.add(blackItem); convMenu.add(whiteItem); convMenu.add(grayItem);
-        convMenu.addSeparator();
-        convMenu.add(copyItem); convMenu.add(mirrorItem);
-
-        settingsMenu.add(convMenu);
-        return settingsMenu;
-    }
-
-    /**
-     * Constructs the "Iris recognition" dropdown menu containing actions for navigating through iris recognition.
-     *
-     * @return The fully configured IrisRecognition JMenu.
-     */
-    private JMenu setupIrisRecognitionMenu() {
-        JMenu irisRecognitionMenu = new JMenu("Iris recognition");
-
-        JMenuItem startRecognitionItem = new JMenuItem("Show process");
-
-        JMenuItem compareTwoPicsItem = new JMenuItem("Compare 2 iris pictures");
-
-        startRecognitionItem.addActionListener(e -> optionPanel.loadToolPanel(new IrisRecognitionPanel(photoPanel, optionPanel)));
-        compareTwoPicsItem.addActionListener(e -> optionPanel.loadToolPanel(new IrisComparisonPanel(photoPanel, optionPanel)));
-
-        irisRecognitionMenu.add(startRecognitionItem);
-        irisRecognitionMenu.add(compareTwoPicsItem);
-
-        return irisRecognitionMenu;
-    }
-
 }

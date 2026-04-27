@@ -1,7 +1,5 @@
 package core;
 
-import optionspanels.GrayscalePanel;
-
 public class IrisRecognitionProcessor {
 
     /**
@@ -372,7 +370,7 @@ public class IrisRecognitionProcessor {
     public static int[][][] extractIrisRectangle(int[][][] originalMatrix, OptionPanel.BoundaryMode mode) {
         if (originalMatrix == null) return null;
 
-        int[][][] grayscaledMatrix = ImageProcessor.applyGrayscale(originalMatrix, GrayscalePanel.GrayscaleOptions.LUMINANCE);
+        int[][][] grayscaledMatrix = ImageProcessor.applyGrayscale(originalMatrix, ImageProcessor.GrayscaleOptions.LUMINANCE);
         int[][][] newMatrix = applyPupilBinarization(grayscaledMatrix);
         newMatrix = applyPupilMorphology(newMatrix, mode);
         int[] eyeCenter = IrisRecognitionProcessor.calculateCenter(newMatrix);

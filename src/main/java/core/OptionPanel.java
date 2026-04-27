@@ -5,8 +5,7 @@ import java.awt.*;
 
 /**
  * The sidebar panel for additional user input for various image editing features.
- * At the top, it displays a Tool Area for the particular image editing feature selected from Edit menu.
- * At the bottom, it displays an image histogram (whose version depends on whatever the user selects from Display menu).
+ * At the top, it displays a Tool Area for the particular image editing feature.
  */
 public class OptionPanel extends JPanel {
 
@@ -18,12 +17,11 @@ public class OptionPanel extends JPanel {
     }
 
     private PhotoPanel photoPanel;
-    private EditMenu editMenu;
     private BoundaryMode currentBoundaryMode = BoundaryMode.REPLICATE;
     private JPanel toolArea;
 
     /**
-     * Constructs the sidebar panel with a top tool area and a bottom histogram.
+     * Constructs the sidebar panel.
      *
      * @param photoPanel The image panel controlled / referenced by this option panel.
      */
@@ -35,25 +33,6 @@ public class OptionPanel extends JPanel {
 
         toolArea = new JPanel(new BorderLayout());
         this.add(toolArea, BorderLayout.NORTH);
-
-    }
-
-    /**
-     * Links the EditMenu to this panel.
-     *
-     * @param editMenu The application's Edit menu.
-     */
-    public void setEditMenu(EditMenu editMenu) {
-        this.editMenu = editMenu;
-    }
-
-    /**
-     * Updates the current boundary handling mode.
-     *
-     * @param mode The selected BoundaryMode enum.
-     */
-    public void setBoundaryMode(BoundaryMode mode) {
-        this.currentBoundaryMode = mode;
     }
 
     /**
@@ -66,27 +45,7 @@ public class OptionPanel extends JPanel {
     }
 
     /**
-     * Helper method to push a new undo state to the Edit menu.
-     *
-     * @param matrixToSave The image matrix before the tool applies changes.
-     */
-    public void saveUndoState(int[][][] matrixToSave) {
-        if (editMenu != null && matrixToSave != null) {
-            editMenu.setLastImageMatrix(matrixToSave);
-        }
-    }
-
-    /**
-     * Clears the tool area and forces the histogram to recalculate when a new image is loaded.
-     */
-    public void refreshOnImport() {
-        toolArea.removeAll();
-        this.revalidate();
-        this.repaint();
-    }
-
-    /**
-     * Swaps out the currently active tool interface for a new one when the user selects a new one from the EditMenu.
+     * Swaps out the currently active tool interface for a new one.
      *
      * @param toolPanel The JPanel containing the UI for the newly selected tool.
      */
@@ -105,9 +64,10 @@ public class OptionPanel extends JPanel {
     }
 
     /**
-     * Updates the projections
+     * Updates the projections.
      */
     public void updateProjections() {
         photoPanel.updateProjections();
     }
+
 }

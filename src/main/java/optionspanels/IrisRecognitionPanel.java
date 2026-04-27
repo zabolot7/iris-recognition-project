@@ -35,7 +35,6 @@ public class IrisRecognitionPanel extends JPanel{
         this.setBorder(BorderFactory.createEmptyBorder(30, 20, 0, 20));
 
         this.originalMatrix = photoPanel.getImageMatrix();
-        parentPanel.saveUndoState(originalMatrix);
         boundaryMode = parentPanel.getBoundaryMode();
 
         loadDefaultImage();
@@ -131,8 +130,7 @@ public class IrisRecognitionPanel extends JPanel{
         });
 
         grayscaleBtn.addActionListener(e -> {
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
-            int[][][] newMatrix = ImageProcessor.applyGrayscale(photoPanel.getImageMatrix(), GrayscalePanel.GrayscaleOptions.LUMINANCE);
+            int[][][] newMatrix = ImageProcessor.applyGrayscale(photoPanel.getImageMatrix(), ImageProcessor.GrayscaleOptions.LUMINANCE);
             photoPanel.setImageMatrix(newMatrix);
             isGrayscaleApplied = true;
             parentPanel.updateProjections();
@@ -146,7 +144,6 @@ public class IrisRecognitionPanel extends JPanel{
         });
 
         revertGrayscaleBtn.addActionListener(e -> {
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
             if (grayscaledMatrix != null) {
                 photoPanel.setImageMatrix(grayscaledMatrix);
             } else {
@@ -158,7 +155,6 @@ public class IrisRecognitionPanel extends JPanel{
         pupilBinarizationBtn.addActionListener(e -> {
             if (!isGrayscaleApplied) return;
 
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = IrisRecognitionProcessor.applyPupilBinarization(photoPanel.getImageMatrix());
             photoPanel.setImageMatrix(newMatrix);
             parentPanel.updateProjections();
@@ -169,7 +165,6 @@ public class IrisRecognitionPanel extends JPanel{
         pupilMorphologyBtn.addActionListener(e -> {
             if (!isBinarized) return;
 
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = IrisRecognitionProcessor.applyPupilMorphology(photoPanel.getImageMatrix(), boundaryMode);
             photoPanel.setImageMatrix(newMatrix);
             parentPanel.updateProjections();
@@ -178,7 +173,6 @@ public class IrisRecognitionPanel extends JPanel{
         pupilBoundariesBtn.addActionListener(e -> {
             if (!isBinarized) return;
 
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
             eyeCenter = IrisRecognitionProcessor.calculateCenter(photoPanel.getImageMatrix());
             pupilRadius = IrisRecognitionProcessor.calculateRadius(photoPanel.getImageMatrix(), eyeCenter);
             int[][][] newMatrix = IrisRecognitionProcessor.applyBoundaries(photoPanel.getImageMatrix(), eyeCenter, pupilRadius);
@@ -190,7 +184,6 @@ public class IrisRecognitionPanel extends JPanel{
         irisBoundariesBtn.addActionListener(e -> {
             if (!isBinarized) return;
 
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
             irisRadius = IrisRecognitionProcessor.calculateDaugmanIrisRadius(grayscaledMatrix, eyeCenter, pupilRadius);
             int[][][] newMatrix = IrisRecognitionProcessor.applyBoundaries(photoPanel.getImageMatrix(), eyeCenter, irisRadius);
             photoPanel.setImageMatrix(newMatrix);
@@ -199,7 +192,6 @@ public class IrisRecognitionPanel extends JPanel{
         });
 
         allBoundariesBtn.addActionListener(e -> {
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
 
             int[][][] newMatrix = IrisRecognitionProcessor.applyBoundaries(originalMatrix, eyeCenter, pupilRadius);
             newMatrix = IrisRecognitionProcessor.applyBoundaries(newMatrix, eyeCenter, irisRadius);
@@ -211,7 +203,6 @@ public class IrisRecognitionPanel extends JPanel{
         });
 
         getIrisRectangleBtn.addActionListener(e -> {
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
             int[][][] newMatrix = IrisRecognitionProcessor.generateIrisRectangle(originalMatrix, eyeCenter, pupilRadius, irisRadius);
             photoPanel.setImageMatrix(newMatrix);
             parentPanel.updateProjections();
@@ -220,7 +211,6 @@ public class IrisRecognitionPanel extends JPanel{
         });
 
         generateCodeBtn.addActionListener(e -> {
-            parentPanel.saveUndoState(photoPanel.getImageMatrix());
 
             int[][][] unwrappedIris = photoPanel.getImageMatrix();
 

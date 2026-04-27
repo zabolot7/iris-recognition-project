@@ -172,7 +172,7 @@ public class IrisComparisonPanel extends JPanel {
      */
     private IrisRecognitionProcessor.IrisTemplate processImageToTemplate(int[][][] inputMatrix) {
         try {
-            int[][][] gray = ImageProcessor.applyGrayscale(inputMatrix, GrayscalePanel.GrayscaleOptions.LUMINANCE);
+            int[][][] gray = ImageProcessor.applyGrayscale(inputMatrix, ImageProcessor.GrayscaleOptions.LUMINANCE);
             int[][][] bin = IrisRecognitionProcessor.applyPupilBinarization(gray);
             int[][][] morph = IrisRecognitionProcessor.applyPupilMorphology(bin, boundaryMode);
 
