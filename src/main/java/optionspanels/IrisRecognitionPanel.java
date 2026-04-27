@@ -106,6 +106,14 @@ public class IrisRecognitionPanel extends JPanel{
                 originalMatrix = photoPanel.createImageMatrix(img1);
 
                 photoPanel.setImageMatrix(originalMatrix);
+                pupilBinarizationBtn.setEnabled(false);
+                pupilMorphologyBtn.setEnabled(false);
+                pupilBoundariesBtn.setEnabled(false);
+                revertGrayscaleBtn.setEnabled(false);
+                allBoundariesBtn.setEnabled(false);
+                irisBoundariesBtn.setEnabled(false);
+                generateCodeBtn.setEnabled(false);
+                getIrisRectangleBtn.setEnabled(false);
 
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, "Error reading image file.", "Error", JOptionPane.ERROR_MESSAGE);
